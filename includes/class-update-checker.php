@@ -12,7 +12,7 @@ class Update_Checker {
 	private const GITHUB_REPO  = 'wordpress-technoliga-support';
 	private const GITHUB_API   = 'https://api.github.com/repos/';
 	private const CACHE_KEY    = 'technoliga_support_update_check';
-	private const CACHE_TTL    = 300; // 5 minutes
+	private const CACHE_TTL    = 60; // 1 minute
 
 	private ?string $plugin_basename = null;
 	private string   $current_version;
@@ -24,11 +24,30 @@ class Update_Checker {
 	public static function register(): void {
 		$checker = new self();
 
+		// Inject into update transient (read + write paths)
 		add_filter( 'site_transient_update_plugins', array( $checker, 'check_for_update' ) );
 		add_filter( 'pre_set_site_transient_update_plugins', array( $checker, 'check_for_update' ) );
+
+		// Plugin info modal
 		add_filter( 'plugins_api', array( $checker, 'plugin_info' ), 10, 3 );
+
+		// Admin notice fallback on our own pages
 		add_action( 'admin_notices', array( $checker, 'update_notice' ) );
+
+		// After any plugin install/upgrade, clear our cache
 		add_action( 'upgrader_process_complete', array( $checker, 'clear_cache' ), 10, 2 );
+
+		// Force fresh check when visiting the Plugins page
+		add_action( 'load-plugins.php', array( $checker, 'force_fresh_check' ) );
+		add_action( 'load-update-core.php', array( $checker, 'force_fresh_check' ) );
+	}
+
+	/**
+	 * Clear the update cache so next check fetches fresh from GitHub.
+	 */
+	public function force_fresh_check(): void {
+		delete_transient( self::CACHE_KEY );
+		$this->log( 'Forced fresh update check (Plugins/Updates page visit).' );
 	}
 
 	/**
@@ -94,6 +113,9 @@ class Update_Checker {
 		if ( ! isset( $transient->response ) ) {
 			$transient->response = array();
 		}
+		if ( ! isset( $transient->no_update ) ) {
+			$transient->no_update = array();
+		}
 		if ( ! isset( $transient->checked ) ) {
 			$transient->checked = array();
 		}
@@ -103,6 +125,7 @@ class Update_Checker {
 			return $transient;
 		}
 
+		// Ensure our plugin is in the checked list
 		$transient->checked[ $plugin_file ] = $this->current_version;
 
 		$latest = $this->fetch_latest_release();
@@ -111,6 +134,11 @@ class Update_Checker {
 		}
 
 		if ( version_compare( $latest['version'], $this->current_version, '>' ) ) {
+			// Remove from no_update if present
+			if ( isset( $transient->no_update[ $plugin_file ] ) ) {
+				unset( $transient->no_update[ $plugin_file ] );
+			}
+
 			$transient->response[ $plugin_file ] = (object) array(
 				'id'           => sprintf( '%s/%s', self::GITHUB_OWNER, self::GITHUB_REPO ),
 				'slug'         => 'technoliga-support',
@@ -122,8 +150,21 @@ class Update_Checker {
 				'requires'     => '6.0',
 				'requires_php' => '7.4',
 			);
-		} elseif ( isset( $transient->response[ $plugin_file ] ) ) {
-			unset( $transient->response[ $plugin_file ] );
+		} else {
+			// No update: ensure it's in no_update and not in response
+			if ( isset( $transient->response[ $plugin_file ] ) ) {
+				unset( $transient->response[ $plugin_file ] );
+			}
+			$transient->no_update[ $plugin_file ] = (object) array(
+				'id'           => sprintf( '%s/%s', self::GITHUB_OWNER, self::GITHUB_REPO ),
+				'slug'         => 'technoliga-support',
+				'plugin'       => $plugin_file,
+				'new_version'  => $this->current_version,
+				'url'          => $latest['url'],
+				'tested'       => get_bloginfo( 'version' ),
+				'requires'     => '6.0',
+				'requires_php' => '7.4',
+			);
 		}
 
 		return $transient;
