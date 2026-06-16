@@ -97,3 +97,163 @@
 .technoliga-wrap .wp-list-table .ts-badge {
 	margin: 0;
 }
+
+/* --- Intake Wizard ------------------------------------------------------- */
+
+.ts-step-indicator {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin: 20px 0 24px;
+	padding: 0;
+	list-style: none;
+}
+
+.ts-step-indicator .ts-step-dot {
+	width: 32px;
+	height: 32px;
+	border-radius: 50%;
+	background: #e5e7eb;
+	color: #6b7280;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-weight: 600;
+	font-size: 14px;
+}
+
+.ts-step-indicator .ts-step-dot.active {
+	background: #dc2626;
+	color: #fff;
+}
+
+.ts-step-indicator .ts-step-line {
+	flex: 1;
+	height: 2px;
+	background: #e5e7eb;
+	max-width: 60px;
+}
+
+.ts-step {
+	display: none;
+}
+
+.ts-step.ts-step-active {
+	display: block;
+}
+
+.ts-field {
+	margin-bottom: 20px;
+}
+
+.ts-field label {
+	display: block;
+	font-weight: 600;
+	margin-bottom: 6px;
+	font-size: 14px;
+}
+
+.ts-field .ts-required {
+	color: #dc2626;
+}
+
+.ts-field input[type="text"],
+.ts-field textarea,
+.ts-field select {
+	width: 100%;
+	max-width: 600px;
+}
+
+.ts-field-error input,
+.ts-field-error textarea,
+.ts-field-error select {
+	border-color: #dc2626 !important;
+}
+
+.ts-field-error::after {
+	content: attr(data-error);
+	color: #dc2626;
+	font-size: 12px;
+	margin-top: 4px;
+	display: block;
+}
+
+.ts-category-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+	gap: 12px;
+	margin: 20px 0;
+}
+
+.ts-category-option {
+	position: relative;
+}
+
+.ts-category-option input {
+	position: absolute;
+	opacity: 0;
+}
+
+.ts-category-option label {
+	display: block;
+	padding: 16px;
+	border: 2px solid #e5e7eb;
+	border-radius: 8px;
+	cursor: pointer;
+	transition: border-color 0.2s, background 0.2s;
+	background: #fff;
+}
+
+.ts-category-option label:hover {
+	border-color: #dc2626;
+}
+
+.ts-category-option input:checked + label {
+	border-color: #dc2626;
+	background: #fef2f2;
+}
+
+.ts-category-option .ts-cat-title {
+	font-weight: 600;
+	font-size: 14px;
+	margin-bottom: 4px;
+	display: block;
+}
+
+.ts-category-option .ts-cat-desc {
+	font-size: 12px;
+	color: #6b7280;
+	display: block;
+}
+
+.ts-wizard-actions {
+	display: flex;
+	gap: 10px;
+	margin-top: 24px;
+	padding-top: 20px;
+	border-top: 1px solid #e5e7eb;
+}
+
+.ts-review-box {
+	background: #f9fafb;
+	border: 1px solid #e5e7eb;
+	border-radius: 8px;
+	padding: 16px;
+	margin: 16px 0;
+}
+
+.ts-review-box h4 {
+	margin: 0 0 8px;
+	font-size: 13px;
+	text-transform: uppercase;
+	color: #6b7280;
+	letter-spacing: 0.5px;
+}
+
+.ts-review-box p {
+	margin: 0 0 12px;
+}
+
+.ts-review-box p:last-child {
+	margin-bottom: 0;
+}

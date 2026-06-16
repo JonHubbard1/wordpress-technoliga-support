@@ -100,11 +100,14 @@ class Ticket_Views {
 			$cat     = isset( $_POST['intake_category'] ) ? sanitize_text_field( wp_unslash( $_POST['intake_category'] ) ) : 'support_request';
 			$pri     = isset( $_POST['priority'] ) ? sanitize_text_field( wp_unslash( $_POST['priority'] ) ) : 'medium';
 			$desc    = isset( $_POST['description'] ) ? sanitize_textarea_field( wp_unslash( $_POST['description'] ) ) : '';
+			$answers = isset( $_POST['answers'] ) && is_array( $_POST['answers'] ) ? array_map( 'sanitize_textarea_field', wp_unslash( $_POST['answers'] ) ) : array();
 
 			$prefill = compact( 'subject', 'intake_category', 'priority', 'description' );
 
-			if ( empty( $subject ) || empty( $desc ) ) {
-				$error = __( 'Subject and description are required.', 'technoliga-support' );
+			if ( empty( $subject ) ) {
+				$error = __( 'Subject is required.', 'technoliga-support' );
+			} elseif ( empty( $answers['expected_outcome'] ) || empty( $answers['business_impact'] ) ) {
+				$error = __( 'Please answer all required questions.', 'technoliga-support' );
 			} else {
 				try {
 					$data = array(
@@ -112,7 +115,7 @@ class Ticket_Views {
 						'intake_category' => $cat,
 						'priority'        => $pri,
 						'description'     => $desc,
-						'answers'         => array( 'issue' => $desc ),
+						'answers'         => $answers,
 						'source'          => 'wordpress_plugin',
 					);
 

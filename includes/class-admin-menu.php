@@ -101,6 +101,7 @@ class Admin_Menu {
 			'tsAdmin',
 			array(
 				'confirmStatus' => __( 'Are you sure you want to change the ticket status?', 'technoliga-support' ),
+				'selectOption' => __( '-- Select --', 'technoliga-support' ),
 			)
 		);
 	}
