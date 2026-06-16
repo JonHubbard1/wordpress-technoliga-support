@@ -38,7 +38,6 @@ class Tickets_Table extends \WP_List_Table {
 		$hidden   = array();
 		$sortable = array();
 
-		$this->_screen->add_option( 'per_page', array( 'default' => 15 ) );
 		$per_page = $this->get_items_per_page( 'tickets_per_page', 15 );
 
 		$filters = array(
@@ -99,6 +98,10 @@ class Tickets_Table extends \WP_List_Table {
 
 	public function column_default( $item, $column_name ): string {
 		return esc_html( $item[ $column_name ] ?? '-' );
+	}
+
+	public function no_items(): void {
+		echo esc_html__( 'No tickets found.', 'technoliga-support' );
 	}
 
 	public function column_id( $item ): string {
