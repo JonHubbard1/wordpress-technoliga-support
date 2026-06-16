@@ -12,7 +12,7 @@ class Update_Checker {
 	private const GITHUB_REPO  = 'wordpress-technoliga-support';
 	private const GITHUB_API   = 'https://api.github.com/repos/';
 	private const CACHE_KEY    = 'technoliga_support_update_check';
-	private const CACHE_TTL    = 3600; // 1 hour
+	private const CACHE_TTL    = 300; // 5 minutes
 
 	private ?string $plugin_basename = null;
 	private string   $current_version;
@@ -24,32 +24,25 @@ class Update_Checker {
 	public static function register(): void {
 		$checker = new self();
 
-		// Inject into update transient (read + write paths)
 		add_filter( 'site_transient_update_plugins', array( $checker, 'check_for_update' ) );
 		add_filter( 'pre_set_site_transient_update_plugins', array( $checker, 'check_for_update' ) );
-
-		// Plugin info modal
 		add_filter( 'plugins_api', array( $checker, 'plugin_info' ), 10, 3 );
-
-		// Admin notice fallback on our own pages
 		add_action( 'admin_notices', array( $checker, 'update_notice' ) );
-
-		// After-install: clear our cache so next check is fresh
 		add_action( 'upgrader_process_complete', array( $checker, 'clear_cache' ), 10, 2 );
 	}
 
 	/**
-	 * After any plugin/theme install/upgrade, clear our update cache.
+	 * After any plugin install/upgrade, clear our update cache.
 	 */
 	public function clear_cache( \WP_Upgrader $upgrader, array $hook_extra ): void {
 		if ( 'plugin' === ( $hook_extra['type'] ?? '' ) ) {
 			delete_transient( self::CACHE_KEY );
-			delete_transient( self::CACHE_KEY . '_timestamp' );
 		}
 	}
 
 	/**
 	 * Show an admin notice when an update is available.
+	 * This ALWAYS fetches fresh from GitHub so users see updates immediately.
 	 */
 	public function update_notice(): void {
 		$screen = get_current_screen();
@@ -57,7 +50,7 @@ class Update_Checker {
 			return;
 		}
 
-		$latest = $this->fetch_latest_release();
+		$latest = $this->fetch_latest_release( true );
 		if ( ! $latest ) {
 			return;
 		}
@@ -110,7 +103,6 @@ class Update_Checker {
 			return $transient;
 		}
 
-		// Ensure our plugin is in the checked list with its current version
 		$transient->checked[ $plugin_file ] = $this->current_version;
 
 		$latest = $this->fetch_latest_release();
@@ -154,7 +146,7 @@ class Update_Checker {
 			return $result;
 		}
 
-		$latest = $this->fetch_latest_release();
+		$latest = $this->fetch_latest_release( true );
 		if ( ! $latest ) {
 			return $result;
 		}
@@ -182,7 +174,6 @@ class Update_Checker {
 
 	/**
 	 * Find the actual plugin basename by scanning active plugins.
-	 * This handles cases where the folder was renamed during install.
 	 *
 	 * @return string|null
 	 */
@@ -203,21 +194,23 @@ class Update_Checker {
 			}
 		}
 
-		// Fallback to the standard path
 		$fallback = plugin_basename( TECHNOLIGA_SUPPORT_PATH . 'technoliga-support.php' );
 		$this->plugin_basename = $fallback;
 		return $fallback;
 	}
 
 	/**
-	 * Fetch the latest release from GitHub (cached).
+	 * Fetch the latest release from GitHub.
 	 *
+	 * @param bool $skip_cache When true, always fetch fresh from GitHub.
 	 * @return array<string, mixed>|null
 	 */
-	private function fetch_latest_release(): ?array {
-		$cached = get_transient( self::CACHE_KEY );
-		if ( false !== $cached ) {
-			return $cached;
+	private function fetch_latest_release( bool $skip_cache = false ): ?array {
+		if ( ! $skip_cache ) {
+			$cached = get_transient( self::CACHE_KEY );
+			if ( false !== $cached ) {
+				return $cached;
+			}
 		}
 
 		$api_url = sprintf(
@@ -259,8 +252,6 @@ class Update_Checker {
 		$version = ltrim( $data['tag_name'], 'v' );
 		$asset   = null;
 
-		// Find the first .zip asset (GitHub may report content_type as
-		// application/octet-stream rather than application/zip)
 		if ( ! empty( $data['assets'] ) && is_array( $data['assets'] ) ) {
 			foreach ( $data['assets'] as $a ) {
 				$name = $a['name'] ?? '';
@@ -294,9 +285,6 @@ class Update_Checker {
 		return $result;
 	}
 
-	/**
-	 * Write a debug log entry when WP_DEBUG is enabled.
-	 */
 	private function log( string $message ): void {
 		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
