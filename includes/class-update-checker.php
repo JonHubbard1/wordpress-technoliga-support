@@ -16,15 +16,20 @@ class Update_Checker {
 
 	private string $plugin_file;
 	private string $current_version;
+	private string $plugin_basename;
 
 	public function __construct() {
 		$this->plugin_file     = TECHNOLIGA_SUPPORT_PATH . 'technoliga-support.php';
+		$this->plugin_basename = plugin_basename( $this->plugin_file );
 		$this->current_version = TECHNOLIGA_SUPPORT_VERSION;
 	}
 
 	public static function register(): void {
 		$checker = new self();
+		// Fires when WordPress writes the update transient (Plugins / Updates page)
 		add_filter( 'pre_set_site_transient_update_plugins', array( $checker, 'check_for_update' ) );
+		// Fires when WordPress reads the existing transient (any admin page)
+		add_filter( 'site_transient_update_plugins', array( $checker, 'check_for_update' ) );
 		add_filter( 'plugins_api', array( $checker, 'plugin_info' ), 10, 3 );
 	}
 
@@ -50,10 +55,10 @@ class Update_Checker {
 		}
 
 		if ( version_compare( $latest['version'], $this->current_version, '>' ) ) {
-			$transient->response[ plugin_basename( $this->plugin_file ) ] = (object) array(
+			$transient->response[ $this->plugin_basename ] = (object) array(
 				'id'            => sprintf( '%s/%s', self::GITHUB_OWNER, self::GITHUB_REPO ),
 				'slug'          => 'technoliga-support',
-				'plugin'        => plugin_basename( $this->plugin_file ),
+				'plugin'        => $this->plugin_basename,
 				'new_version'   => $latest['version'],
 				'url'           => $latest['url'],
 				'package'       => $latest['download_url'],
@@ -144,10 +149,13 @@ class Update_Checker {
 		$version = ltrim( $data['tag_name'], 'v' );
 		$asset   = null;
 
-		// Find the first .zip asset
+		// Find the first .zip asset (GitHub may report content_type as
+		// application/octet-stream rather than application/zip)
 		if ( ! empty( $data['assets'] ) && is_array( $data['assets'] ) ) {
 			foreach ( $data['assets'] as $a ) {
-				if ( isset( $a['content_type'] ) && 'application/zip' === $a['content_type'] ) {
+				$name = $a['name'] ?? '';
+				$type = $a['content_type'] ?? '';
+				if ( str_ends_with( strtolower( $name ), '.zip' ) || 'application/zip' === $type || 'application/octet-stream' === $type ) {
 					$asset = $a['browser_download_url'] ?? null;
 					break;
 				}
