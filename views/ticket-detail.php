@@ -26,6 +26,7 @@ $comments  = $ticket['comments']['data'] ?? $ticket['comments'] ?? array();
 			<strong><?php echo esc_html__( 'Type:', 'technoliga-support' ); ?></strong> <?php echo esc_html( ucwords( str_replace( '_', ' ', $ticket['type'] ?? '' ) ) ); ?> <br>
 			<strong><?php echo esc_html__( 'Priority:', 'technoliga-support' ); ?></strong> <?php echo Tickets_Table::priority_badge( $ticket['priority'] ?? '' ); ?> <br>
 			<strong><?php echo esc_html__( 'Assigned To:', 'technoliga-support' ); ?></strong> <?php echo esc_html( $ticket['assigned_user']['name'] ?? __( 'Unassigned', 'technoliga-support' ) ); ?> <br>
+		<strong><?php echo esc_html__( 'Project:', 'technoliga-support' ); ?></strong> <?php echo esc_html( $ticket['project']['title'] ?? __( 'No project', 'technoliga-support' ) ); ?> <br>
 			<strong><?php echo esc_html__( 'Created:', 'technoliga-support' ); ?></strong> <?php echo esc_html( $ticket['created_at'] ?? '' ); ?> <br>
 			<strong><?php echo esc_html__( 'Updated:', 'technoliga-support' ); ?></strong> <?php echo esc_html( $ticket['updated_at'] ?? '' ); ?>
 		</p>

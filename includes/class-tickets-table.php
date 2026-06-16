@@ -26,6 +26,7 @@ class Tickets_Table extends \WP_List_Table {
 			'cb'        => '<input type="checkbox" />',
 			'id'        => __( 'ID', 'technoliga-support' ),
 			'subject'   => __( 'Subject', 'technoliga-support' ),
+			'project'   => __( 'Project', 'technoliga-support' ),
 			'status'    => __( 'Status', 'technoliga-support' ),
 			'priority'  => __( 'Priority', 'technoliga-support' ),
 			'type'      => __( 'Type', 'technoliga-support' ),
@@ -126,6 +127,14 @@ class Tickets_Table extends \WP_List_Table {
 
 	public function column_priority( $item ): string {
 		return self::priority_badge( $item['priority'] );
+	}
+
+	public function column_project( $item ): string {
+		$project = $item['project'] ?? null;
+		if ( is_array( $project ) && ! empty( $project['title'] ) ) {
+			return esc_html( $project['title'] );
+		}
+		return '-';
 	}
 
 	public function column_created( $item ): string {
