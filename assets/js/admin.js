@@ -93,6 +93,12 @@
 			$('#ts-review-answers').html(answersHtml);
 		}
 
+		function setSuggestedSubject(subject) {
+			if (!subject) return;
+			$('#ts-subject-hidden').val(subject);
+			$('#ts-review-subject').text(subject);
+		}
+
 		function escapeHtml(text) {
 			if (!text) return '';
 			var div = document.createElement('div');
@@ -179,22 +185,26 @@
 							// Pre-fill subject and priority
 							var suggestedSubject = response.data.suggested_subject || '';
 							var suggestedPriority = response.data.suggested_priority || 'medium';
-							if (!$('#subject').val()) {
-								$('#subject').val(suggestedSubject);
-							}
+							setSuggestedSubject(suggestedSubject);
 							$('#priority').val(suggestedPriority);
 							renderReview();
 							showStep(3);
 						}
 					} else {
-						// Fallback: just go to step 3
+						// Fallback: go to step 3 with fallback subject if none provided
+						var fallbackSubject = response.data.suggested_subject || ((catLabels[cat] ? catLabels[cat].label : 'Support') + ' request');
+						setSuggestedSubject(fallbackSubject);
+						$('#priority').val(response.data.suggested_priority || 'medium');
 						renderReview();
 						showStep(3);
 					}
 				},
 				error: function () {
 					hideLoading();
-					// On error, just proceed to step 3
+					// On error, generate a fallback subject and proceed
+					var cat = $('input[name="intake_category"]:checked').val() || '';
+					var fallbackSubject = (catLabels[cat] ? catLabels[cat].label : 'Support') + ' request';
+					setSuggestedSubject(fallbackSubject);
 					renderReview();
 					showStep(3);
 				}
@@ -214,9 +224,7 @@
 
 			// Pre-fill subject/priority if available from earlier analyze
 			if (analyzeResponse) {
-				if (!$('#subject').val() && analyzeResponse.suggested_subject) {
-					$('#subject').val(analyzeResponse.suggested_subject);
-				}
+				setSuggestedSubject(analyzeResponse.suggested_subject);
 				if (analyzeResponse.suggested_priority) {
 					$('#priority').val(analyzeResponse.suggested_priority);
 				}
@@ -239,6 +247,19 @@
 		// Remove error styling on input
 		$(document).on('input change', '.ts-field-error input, .ts-field-error textarea, .ts-field-error select', function () {
 			$(this).closest('.ts-field').removeClass('ts-field-error');
+		});
+
+		// Toggle additional description
+		$('#ts-toggle-description').on('click', function () {
+			var $wrap = $('#ts-description-wrap');
+			if ($wrap.is(':visible')) {
+				$wrap.hide();
+				$(this).text('+ ' + tsAdmin.addDetails || '+ Add anything else?');
+			} else {
+				$wrap.show();
+				$(this).text('- ' + tsAdmin.hideDetails || '- Hide');
+				$('#description').focus();
+			}
 		});
 
 		// --- Restore state on validation-error reload --------------------------
@@ -267,6 +288,11 @@
 					if (prefillClarifications.hasOwnProperty(cKey)) {
 						$('[name="answers[' + cKey + ']"]').val(prefillClarifications[cKey]);
 					}
+				}
+				// Also restore subject text
+				var hiddenSubject = $('#ts-subject-hidden').val();
+				if (hiddenSubject) {
+					$('#ts-review-subject').text(hiddenSubject);
 				}
 				renderReview();
 				showStep(3);

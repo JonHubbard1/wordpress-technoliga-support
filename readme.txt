@@ -4,7 +4,7 @@ Tags: support, tickets, technoliga, bms
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 1.1.2
+Stable tag: 1.1.3
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -47,6 +47,12 @@ No. The menu and all pages require the `manage_options` capability (typically Ad
 Yes. The widget and this plugin are completely independent. You can use both simultaneously on the same site.
 
 == Changelog ==
+
+= 1.1.3 =
+* Step 3 is now a true review screen — the AI-suggested subject is shown read-only, not asked as a form field
+* Additional description is collapsed behind a toggle (+ Add anything else?) — no longer presented as a visible empty textarea
+* Priority remains editable so the user can override the AI suggestion
+* Fallback subject is auto-generated if the AI endpoint fails or returns no suggestion
 
 = 1.1.2 =
 * AI-powered intake analyze flow — answers are sent to Technoliga BMS for review before ticket creation

@@ -525,10 +525,10 @@ $intake_questions = array(
 			</div>
 		</div>
 
-		<!-- Step 3: Details & Review -->
+		<!-- Step 3: Review -->
 		<div class="ts-step" data-step="3">
 			<h2><?php echo esc_html__( 'Step 3 of 3 — Review & submit', 'technoliga-support' ); ?></h2>
-			<p class="description"><?php echo esc_html__( 'Review your answers. We have suggested a subject and priority based on your responses — feel free to edit them.', 'technoliga-support' ); ?></p>
+			<p class="description"><?php echo esc_html__( 'Here is a summary of your request. The subject and priority were suggested automatically — you can change the priority if you need to.', 'technoliga-support' ); ?></p>
 
 			<div class="ts-card">
 				<h3><?php echo esc_html__( 'Ticket Summary', 'technoliga-support' ); ?></h3>
@@ -539,14 +539,11 @@ $intake_questions = array(
 				<div id="ts-review-answers"></div>
 			</div>
 
+			<!-- Subject is AI-suggested — hidden for submission, shown read-only -->
+			<input type="hidden" name="subject" id="ts-subject-hidden" value="<?php echo esc_attr( $prefill['subject'] ); ?>">
 			<div class="ts-field">
-				<label for="subject"><?php echo esc_html__( 'Subject', 'technoliga-support' ); ?> <span class="ts-required">*</span></label>
-				<input type="text" name="subject" id="subject" value="<?php echo esc_attr( $prefill['subject'] ); ?>" class="regular-text" required maxlength="255">
-			</div>
-
-			<div class="ts-field">
-				<label for="description"><?php echo esc_html__( 'Additional description (optional)', 'technoliga-support' ); ?></label>
-				<textarea name="description" id="description" rows="4" class="large-text" maxlength="10000"><?php echo esc_textarea( $prefill['description'] ); ?></textarea>
+				<label><?php echo esc_html__( 'Suggested subject', 'technoliga-support' ); ?></label>
+				<div class="ts-review-subject" id="ts-review-subject"><?php echo esc_html( $prefill['subject'] ); ?></div>
 			</div>
 
 			<div class="ts-field">
@@ -557,6 +554,17 @@ $intake_questions = array(
 					<option value="high" <?php selected( $prefill['priority'], 'high' ); ?>><?php echo esc_html__( 'High', 'technoliga-support' ); ?></option>
 					<option value="urgent" <?php selected( $prefill['priority'], 'urgent' ); ?>><?php echo esc_html__( 'Urgent', 'technoliga-support' ); ?></option>
 				</select>
+			</div>
+
+			<!-- Optional extra description, collapsed by default -->
+			<div class="ts-field">
+				<button type="button" class="button button-link" id="ts-toggle-description" style="padding:0; height:auto;">
+					<?php echo esc_html__( '+ Add anything else?', 'technoliga-support' ); ?>
+				</button>
+				<div id="ts-description-wrap" style="display:none; margin-top:10px;">
+					<label for="description"><?php echo esc_html__( 'Additional details (optional)', 'technoliga-support' ); ?></label>
+					<textarea name="description" id="description" rows="3" class="large-text" maxlength="10000"><?php echo esc_textarea( $prefill['description'] ); ?></textarea>
+				</div>
 			</div>
 
 			<div class="ts-wizard-actions">

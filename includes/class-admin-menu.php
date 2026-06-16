@@ -104,6 +104,8 @@ class Admin_Menu {
 				'confirmStatus' => __( 'Are you sure you want to change the ticket status?', 'technoliga-support' ),
 				'selectOption'  => __( '-- Select --', 'technoliga-support' ),
 				'analyzing'     => __( 'Analyzing your answers...', 'technoliga-support' ),
+				'addDetails'    => __( 'Add anything else?', 'technoliga-support' ),
+				'hideDetails'   => __( 'Hide', 'technoliga-support' ),
 				'apiKey'        => $settings['api_key'] ?? '',
 				'apiUrl'        => rtrim( $settings['base_url'] ?? 'https://technoliga.co.uk', '/' ),
 			)
