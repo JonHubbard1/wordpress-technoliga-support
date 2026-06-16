@@ -1,0 +1,99 @@
+.technoliga-wrap h1 {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+
+.technoliga-wrap h1 .ts-badge {
+	font-size: 13px;
+	padding: 2px 10px;
+}
+
+.ts-card {
+	background: #fff;
+	border: 1px solid #c3c4c7;
+	box-shadow: 0 1px 1px rgba(0,0,0,.04);
+	padding: 20px;
+	margin: 20px 0;
+	max-width: 800px;
+}
+
+.ts-card h2 {
+	margin-top: 0;
+}
+
+.ts-badge {
+	display: inline-block;
+	padding: 2px 8px;
+	border-radius: 12px;
+	font-size: 12px;
+	font-weight: 600;
+	line-height: 1.5;
+	text-transform: capitalize;
+}
+
+.ts-badge.status-open { background: #fef3c7; color: #92400e; }
+.ts-badge.status-progress { background: #dbeafe; color: #1e40af; }
+.ts-badge.status-waiting { background: #fce7f3; color: #9d174d; }
+.ts-badge.status-resolved { background: #d1fae5; color: #065f46; }
+.ts-badge.status-closed { background: #e5e7eb; color: #374151; }
+
+.ts-badge.priority-low { background: #ecfdf5; color: #064e3b; }
+.ts-badge.priority-medium { background: #eff6ff; color: #1e3a8a; }
+.ts-badge.priority-high { background: #fffbeb; color: #92400e; }
+.ts-badge.priority-urgent { background: #fef2f2; color: #991b1b; }
+
+.ts-meta {
+	color: #555;
+	font-size: 13px;
+	line-height: 1.8;
+}
+
+.ts-description {
+	font-size: 14px;
+	line-height: 1.6;
+	white-space: pre-wrap;
+}
+
+.ts-comments {
+	margin-top: 15px;
+}
+
+.ts-comment {
+	border-bottom: 1px solid #f0f0f1;
+	padding: 15px 0;
+}
+
+.ts-comment:last-child {
+	border-bottom: none;
+}
+
+.ts-comment-header {
+	display: flex;
+	justify-content: space-between;
+	margin-bottom: 8px;
+	font-size: 13px;
+	color: #646970;
+}
+
+.ts-comment-date {
+	font-style: italic;
+}
+
+.ts-comment-body {
+	font-size: 14px;
+	line-height: 1.6;
+}
+
+.technoliga-wrap .tablenav {
+	margin-bottom: 10px;
+}
+
+.technoliga-wrap .wp-list-table th,
+.technoliga-wrap .wp-list-table td {
+	vertical-align: middle;
+}
+
+.technoliga-wrap .wp-list-table .ts-badge {
+	margin: 0;
+}
