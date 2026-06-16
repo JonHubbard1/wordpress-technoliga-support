@@ -10,54 +10,41 @@ class Update_Checker {
 
 	private const GITHUB_OWNER = 'JonHubbard1';
 	private const GITHUB_REPO  = 'wordpress-technoliga-support';
-	private const GITHUB_API = 'https://api.github.com/repos/';
-	private const CACHE_KEY  = 'technoliga_support_update_check';
-	private const CACHE_TTL  = 3600; // 1 hour
+	private const GITHUB_API   = 'https://api.github.com/repos/';
+	private const CACHE_KEY    = 'technoliga_support_update_check';
+	private const CACHE_TTL    = 3600; // 1 hour
 
-	private string $plugin_file;
-	private string $current_version;
+	private ?string $plugin_basename = null;
+	private string   $current_version;
 
 	public function __construct() {
-		$this->plugin_file     = TECHNOLIGA_SUPPORT_PATH . 'technoliga-support.php';
 		$this->current_version = TECHNOLIGA_SUPPORT_VERSION;
 	}
 
 	public static function register(): void {
 		$checker = new self();
 
-		// Hook into WordPress update transient (fires on every admin page load)
+		// Inject into update transient (read + write paths)
 		add_filter( 'site_transient_update_plugins', array( $checker, 'check_for_update' ) );
-
-		// Also hook into the write filter so updates persist
 		add_filter( 'pre_set_site_transient_update_plugins', array( $checker, 'check_for_update' ) );
 
 		// Plugin info modal
 		add_filter( 'plugins_api', array( $checker, 'plugin_info' ), 10, 3 );
 
-		// Admin notice when update is available
+		// Admin notice fallback on our own pages
 		add_action( 'admin_notices', array( $checker, 'update_notice' ) );
 
-		// Force recheck when visiting our plugin pages
-		add_action( 'admin_init', array( $checker, 'maybe_force_check' ) );
+		// After-install: clear our cache so next check is fresh
+		add_action( 'upgrader_process_complete', array( $checker, 'clear_cache' ), 10, 2 );
 	}
 
 	/**
-	 * Force a recheck when visiting Technoliga admin pages.
+	 * After any plugin/theme install/upgrade, clear our update cache.
 	 */
-	public function maybe_force_check(): void {
-		$screen = get_current_screen();
-		if ( ! $screen ) {
-			return;
-		}
-		if ( strpos( $screen->id, 'technoliga' ) === false ) {
-			return;
-		}
-
-		// If we haven't checked in the last 5 minutes, clear cache and check again
-		$last_check = get_transient( self::CACHE_KEY . '_timestamp' );
-		if ( false === $last_check || ( time() - $last_check ) > 300 ) {
+	public function clear_cache( \WP_Upgrader $upgrader, array $hook_extra ): void {
+		if ( 'plugin' === ( $hook_extra['type'] ?? '' ) ) {
 			delete_transient( self::CACHE_KEY );
-			set_transient( self::CACHE_KEY . '_timestamp', time(), 300 );
+			delete_transient( self::CACHE_KEY . '_timestamp' );
 		}
 	}
 
@@ -79,9 +66,14 @@ class Update_Checker {
 			return;
 		}
 
+		$plugin_file = $this->resolve_plugin_file();
+		if ( ! $plugin_file ) {
+			return;
+		}
+
 		$update_url = wp_nonce_url(
-			self_admin_url( 'update.php?action=upgrade-plugin&plugin=' . rawurlencode( plugin_basename( $this->plugin_file ) ) ),
-			'upgrade-plugin_' . plugin_basename( $this->plugin_file )
+			self_admin_url( 'update.php?action=upgrade-plugin&plugin=' . rawurlencode( $plugin_file ) ),
+			'upgrade-plugin_' . $plugin_file
 		);
 
 		printf(
@@ -109,37 +101,37 @@ class Update_Checker {
 		if ( ! isset( $transient->response ) ) {
 			$transient->response = array();
 		}
-
 		if ( ! isset( $transient->checked ) ) {
 			$transient->checked = array();
 		}
 
-		$plugin_basename = plugin_basename( $this->plugin_file );
+		$plugin_file = $this->resolve_plugin_file();
+		if ( ! $plugin_file ) {
+			return $transient;
+		}
 
-		// Ensure our plugin is in the checked list
-		$transient->checked[ $plugin_basename ] = $this->current_version;
+		// Ensure our plugin is in the checked list with its current version
+		$transient->checked[ $plugin_file ] = $this->current_version;
 
 		$latest = $this->fetch_latest_release();
-
 		if ( ! $latest ) {
 			return $transient;
 		}
 
 		if ( version_compare( $latest['version'], $this->current_version, '>' ) ) {
-			$transient->response[ $plugin_basename ] = (object) array(
-				'id'            => sprintf( '%s/%s', self::GITHUB_OWNER, self::GITHUB_REPO ),
-				'slug'          => 'technoliga-support',
-				'plugin'        => $plugin_basename,
-				'new_version'   => $latest['version'],
-				'url'           => $latest['url'],
-				'package'       => $latest['download_url'],
-				'tested'        => get_bloginfo( 'version' ),
-				'requires'      => '6.0',
-				'requires_php'  => '7.4',
+			$transient->response[ $plugin_file ] = (object) array(
+				'id'           => sprintf( '%s/%s', self::GITHUB_OWNER, self::GITHUB_REPO ),
+				'slug'         => 'technoliga-support',
+				'plugin'       => $plugin_file,
+				'new_version'  => $latest['version'],
+				'url'          => $latest['url'],
+				'package'      => $latest['download_url'],
+				'tested'       => get_bloginfo( 'version' ),
+				'requires'     => '6.0',
+				'requires_php' => '7.4',
 			);
-		} elseif ( isset( $transient->response[ $plugin_basename ] ) ) {
-			// Clear any stale response
-			unset( $transient->response[ $plugin_basename ] );
+		} elseif ( isset( $transient->response[ $plugin_file ] ) ) {
+			unset( $transient->response[ $plugin_file ] );
 		}
 
 		return $transient;
@@ -163,7 +155,6 @@ class Update_Checker {
 		}
 
 		$latest = $this->fetch_latest_release();
-
 		if ( ! $latest ) {
 			return $result;
 		}
@@ -190,6 +181,35 @@ class Update_Checker {
 	}
 
 	/**
+	 * Find the actual plugin basename by scanning active plugins.
+	 * This handles cases where the folder was renamed during install.
+	 *
+	 * @return string|null
+	 */
+	private function resolve_plugin_file(): ?string {
+		if ( null !== $this->plugin_basename ) {
+			return $this->plugin_basename;
+		}
+
+		if ( ! function_exists( 'get_plugins' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/plugin.php';
+		}
+
+		$all_plugins = get_plugins();
+		foreach ( $all_plugins as $basename => $data ) {
+			if ( ( $data['Name'] ?? '' ) === 'Technoliga Support' ) {
+				$this->plugin_basename = $basename;
+				return $basename;
+			}
+		}
+
+		// Fallback to the standard path
+		$fallback = plugin_basename( TECHNOLIGA_SUPPORT_PATH . 'technoliga-support.php' );
+		$this->plugin_basename = $fallback;
+		return $fallback;
+	}
+
+	/**
 	 * Fetch the latest release from GitHub (cached).
 	 *
 	 * @return array<string, mixed>|null
@@ -211,26 +231,20 @@ class Update_Checker {
 			$api_url,
 			array(
 				'timeout' => 10,
-				headers  => array(
+				'headers' => array(
 					'Accept' => 'application/vnd.github+json',
 				),
 			)
 		);
 
 		if ( is_wp_error( $response ) ) {
-			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-				error_log( 'Technoliga Support update check failed: ' . $response->get_error_message() );
-			}
+			$this->log( 'Update check failed: ' . $response->get_error_message() );
 			return null;
 		}
 
 		$status = wp_remote_retrieve_response_code( $response );
 		if ( 200 !== $status ) {
-			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-				error_log( 'Technoliga Support update check HTTP error: ' . $status );
-			}
+			$this->log( 'Update check HTTP error: ' . $status );
 			return null;
 		}
 
@@ -238,10 +252,7 @@ class Update_Checker {
 		$data = json_decode( $body, true );
 
 		if ( ! is_array( $data ) || empty( $data['tag_name'] ) ) {
-			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-				error_log( 'Technoliga Support update check: invalid JSON or missing tag_name' );
-			}
+			$this->log( 'Update check: invalid JSON or missing tag_name' );
 			return null;
 		}
 
@@ -264,10 +275,7 @@ class Update_Checker {
 		$download_url = $asset ?? ( $data['zipball_url'] ?? '' );
 
 		if ( ! $download_url ) {
-			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-				error_log( 'Technoliga Support update check: no download URL found' );
-			}
+			$this->log( 'Update check: no download URL found' );
 			return null;
 		}
 
@@ -281,11 +289,18 @@ class Update_Checker {
 
 		set_transient( self::CACHE_KEY, $result, self::CACHE_TTL );
 
-		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-			error_log( 'Technoliga Support update check: found version ' . $version . ' | download: ' . $download_url );
-		}
+		$this->log( 'Update check: found version ' . $version . ' | download: ' . $download_url );
 
 		return $result;
+	}
+
+	/**
+	 * Write a debug log entry when WP_DEBUG is enabled.
+	 */
+	private function log( string $message ): void {
+		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+			error_log( 'Technoliga Support: ' . $message );
+		}
 	}
 }
