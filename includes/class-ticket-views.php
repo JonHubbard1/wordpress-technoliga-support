@@ -36,7 +36,7 @@ class Ticket_Views {
 			wp_die( esc_html__( 'Invalid ticket ID.', 'technoliga-support' ) );
 		}
 
-		$success = '';
+		$success = isset( $_GET['created'] ) ? __( 'Ticket created successfully.', 'technoliga-support' ) : '';
 		$error   = '';
 
 		// Handle comment submission
@@ -126,7 +126,7 @@ class Ticket_Views {
 					);
 
 					$result   = self::client()->create_ticket( $data );
-					$new_id   = $result['data']['id'] ?? 0;
+					$new_id   = absint( $result['data']['id'] ?? 0 );
 					$success  = __( 'Ticket created successfully.', 'technoliga-support' );
 
 					if ( $new_id ) {
@@ -135,6 +135,13 @@ class Ticket_Views {
 						);
 						exit;
 					}
+
+					// API returned success but no ticket ID — log for debugging.
+					if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+						// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+						error_log( 'Technoliga Support: create_ticket returned success without ID. Response: ' . wp_json_encode( $result ) );
+					}
+					$error = __( 'Ticket was created but no ID was returned. Please check the ticket list.', 'technoliga-support' );
 				} catch ( \RuntimeException $e ) {
 					$error = $e->getMessage();
 				}

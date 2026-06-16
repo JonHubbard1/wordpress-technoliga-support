@@ -39,11 +39,11 @@ $comments  = $ticket['comments']['data'] ?? $ticket['comments'] ?? array();
 		<form method="post" action="">
 			<?php wp_nonce_field( 'technoliga_update_status_' . $ticket_id ); ?>
 			<select name="status">
-				<option value="open" <?php selected( $ticket['status'] ?? '', 'open' ); ?><?php echo esc_html__( 'Open', 'technoliga-support' ); ?></option>
-				<option value="in_progress" <?php selected( $ticket['status'] ?? '', 'in_progress' ); ?><?php echo esc_html__( 'In Progress', 'technoliga-support' ); ?></option>
-				<option value="waiting_customer" <?php selected( $ticket['status'] ?? '', 'waiting_customer' ); ?><?php echo esc_html__( 'Waiting Customer', 'technoliga-support' ); ?></option>
-				<option value="resolved" <?php selected( $ticket['status'] ?? '', 'resolved' ); ?><?php echo esc_html__( 'Resolved', 'technoliga-support' ); ?></option>
-				<option value="closed" <?php selected( $ticket['status'] ?? '', 'closed' ); ?><?php echo esc_html__( 'Closed', 'technoliga-support' ); ?></option>
+				<option value="open" <?php selected( $ticket['status'] ?? '', 'open' ); ?>><?php echo esc_html__( 'Open', 'technoliga-support' ); ?></option>
+				<option value="in_progress" <?php selected( $ticket['status'] ?? '', 'in_progress' ); ?>><?php echo esc_html__( 'In Progress', 'technoliga-support' ); ?></option>
+				<option value="waiting_customer" <?php selected( $ticket['status'] ?? '', 'waiting_customer' ); ?>><?php echo esc_html__( 'Waiting Customer', 'technoliga-support' ); ?></option>
+				<option value="resolved" <?php selected( $ticket['status'] ?? '', 'resolved' ); ?>><?php echo esc_html__( 'Resolved', 'technoliga-support' ); ?></option>
+				<option value="closed" <?php selected( $ticket['status'] ?? '', 'closed' ); ?>><?php echo esc_html__( 'Closed', 'technoliga-support' ); ?></option>
 			</select>
 			<?php submit_button( __( 'Update Status', 'technoliga-support' ), 'secondary', 'technoliga_update_status' ); ?>
 		</form>

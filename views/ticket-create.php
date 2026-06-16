@@ -438,6 +438,10 @@ $intake_questions = array(
 <div class="wrap technoliga-wrap">
 	<h1><?php echo esc_html__( 'New Support Ticket', 'technoliga-support' ); ?></h1>
 
+	<?php if ( ! empty( $success ) ) { ?>
+		<div class="notice notice-success"><p><?php echo esc_html( $success ); ?></p></div>
+	<?php } ?>
+
 	<?php if ( ! empty( $error ) ) { ?>
 		<div class="notice notice-error"><p><?php echo esc_html( $error ); ?></p></div>
 	<?php } ?>

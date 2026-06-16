@@ -144,10 +144,18 @@ class API_Client {
 
 		if ( $status >= 400 ) {
 			$message = is_array( $data ) && isset( $data['message'] ) ? $data['message'] : 'HTTP ' . $status;
+			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+				error_log( 'Technoliga API error: ' . $method . ' ' . $path . ' -> ' . $status . ' ' . $message . ' | Body: ' . substr( $body_raw, 0, 2000 ) );
+			}
 			throw new \RuntimeException( $message, $status );
 		}
 
 		if ( ! is_array( $data ) ) {
+			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+				error_log( 'Technoliga API invalid JSON: ' . $method . ' ' . $path . ' | Body: ' . substr( $body_raw, 0, 2000 ) );
+			}
 			throw new \RuntimeException( 'Invalid JSON response from Technoliga API.' );
 		}
 
