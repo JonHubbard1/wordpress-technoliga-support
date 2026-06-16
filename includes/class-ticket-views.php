@@ -93,16 +93,22 @@ class Ticket_Views {
 			'intake_category'  => 'support_request',
 			'priority'         => 'medium',
 			'description'      => '',
+			'answers'          => array(),
+			'clarification'    => array(),
 		);
 
 		if ( isset( $_POST['technoliga_create_ticket'] ) && check_admin_referer( 'technoliga_create_ticket' ) ) {
-			$subject = isset( $_POST['subject'] ) ? sanitize_text_field( wp_unslash( $_POST['subject'] ) ) : '';
-			$cat     = isset( $_POST['intake_category'] ) ? sanitize_text_field( wp_unslash( $_POST['intake_category'] ) ) : 'support_request';
-			$pri     = isset( $_POST['priority'] ) ? sanitize_text_field( wp_unslash( $_POST['priority'] ) ) : 'medium';
-			$desc    = isset( $_POST['description'] ) ? sanitize_textarea_field( wp_unslash( $_POST['description'] ) ) : '';
-			$answers = isset( $_POST['answers'] ) && is_array( $_POST['answers'] ) ? array_map( 'sanitize_textarea_field', wp_unslash( $_POST['answers'] ) ) : array();
+			$subject       = isset( $_POST['subject'] ) ? sanitize_text_field( wp_unslash( $_POST['subject'] ) ) : '';
+			$cat           = isset( $_POST['intake_category'] ) ? sanitize_text_field( wp_unslash( $_POST['intake_category'] ) ) : 'support_request';
+			$pri           = isset( $_POST['priority'] ) ? sanitize_text_field( wp_unslash( $_POST['priority'] ) ) : 'medium';
+			$desc          = isset( $_POST['description'] ) ? sanitize_textarea_field( wp_unslash( $_POST['description'] ) ) : '';
+			$answers       = isset( $_POST['answers'] ) && is_array( $_POST['answers'] ) ? array_map( 'sanitize_textarea_field', wp_unslash( $_POST['answers'] ) ) : array();
+			$clarification = isset( $_POST['clarification'] ) && is_array( $_POST['clarification'] ) ? array_map( 'sanitize_textarea_field', wp_unslash( $_POST['clarification'] ) ) : array();
 
-			$prefill = compact( 'subject', 'intake_category', 'priority', 'description' );
+			// Merge clarification answers into main answers so the API receives everything
+			$answers = array_merge( $answers, $clarification );
+
+			$prefill = compact( 'subject', 'intake_category', 'priority', 'description', 'answers', 'clarification' );
 
 			if ( empty( $subject ) ) {
 				$error = __( 'Subject is required.', 'technoliga-support' );

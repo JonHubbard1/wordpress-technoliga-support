@@ -87,6 +87,16 @@ class API_Client {
 	}
 
 	/**
+	 * Analyze an intake submission without creating a ticket.
+	 *
+	 * @param array<string, mixed> $data
+	 * @throws \RuntimeException
+	 */
+	public function analyze( array $data ): array {
+		return $this->request( 'POST', '/api/v1/intake/analyze', $data );
+	}
+
+	/**
 	 * Create a new ticket via the intake endpoint.
 	 *
 	 * @param array<string, mixed> $data

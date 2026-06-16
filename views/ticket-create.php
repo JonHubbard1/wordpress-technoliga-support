@@ -442,6 +442,14 @@ $intake_questions = array(
 		<div class="notice notice-error"><p><?php echo esc_html( $error ); ?></p></div>
 	<?php } ?>
 
+	<!-- Loading Overlay -->
+	<div id="ts-loading-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:10000; align-items:center; justify-content:center;">
+		<div style="background:#fff; padding:30px 40px; border-radius:8px; text-align:center;">
+			<div class="spinner is-active" style="float:none; margin:0 auto 15px;"></div>
+			<p class="ts-loading-text" style="margin:0; font-size:15px;"><?php echo esc_html__( 'Analyzing your answers...', 'technoliga-support' ); ?></p>
+		</div>
+	</div>
+
 	<!-- Step Indicator -->
 	<ul class="ts-step-indicator">
 		<li class="ts-step-dot active" data-step="1">1</li>
@@ -453,6 +461,18 @@ $intake_questions = array(
 
 	<form method="post" action="" id="ts-intake-wizard">
 		<?php wp_nonce_field( 'technoliga_create_ticket' ); ?>
+
+		<?php // Preserve answers on validation-error reloads. ?>
+		<?php if ( ! empty( $prefill['answers'] ) && is_array( $prefill['answers'] ) ) { ?>
+			<?php foreach ( $prefill['answers'] as $k => $v ) { ?>
+				<input type="hidden" name="answers[<?php echo esc_attr( $k ); ?>]" value="<?php echo esc_attr( $v ); ?>" data-ts-prefill-answer="<?php echo esc_attr( $k ); ?>">
+			<?php } ?>
+		<?php } ?>
+		<?php if ( ! empty( $prefill['clarification'] ) && is_array( $prefill['clarification'] ) ) { ?>
+			<?php foreach ( $prefill['clarification'] as $k => $v ) { ?>
+				<input type="hidden" name="clarification[<?php echo esc_attr( $k ); ?>]" value="<?php echo esc_attr( $v ); ?>" data-ts-prefill-clarification="<?php echo esc_attr( $k ); ?>">
+			<?php } ?>
+		<?php } ?>
 
 		<!-- Step 1: Category -->
 		<div class="ts-step ts-step-active" data-step="1">
@@ -492,10 +512,23 @@ $intake_questions = array(
 			</div>
 		</div>
 
-		<!-- Step 3: Details -->
+		<!-- Step 2.5: Clarification (shown only when AI asks follow-up questions) -->
+		<div class="ts-step" data-step="2.5">
+			<h2><?php echo esc_html__( 'Additional questions needed', 'technoliga-support' ); ?></h2>
+			<p class="description"><?php echo esc_html__( 'We need a bit more information to route your ticket correctly.', 'technoliga-support' ); ?></p>
+
+			<div id="ts-clarification-container"></div>
+
+			<div class="ts-wizard-actions">
+				<button type="button" class="button button-primary" id="ts-btn-clarify-next"><?php echo esc_html__( 'Continue →', 'technoliga-support' ); ?></button>
+				<button type="button" class="button button-secondary" id="ts-back-step-2b">← <?php echo esc_html__( 'Back', 'technoliga-support' ); ?></button>
+			</div>
+		</div>
+
+		<!-- Step 3: Details & Review -->
 		<div class="ts-step" data-step="3">
-			<h2><?php echo esc_html__( 'Step 3 of 3 — Final details', 'technoliga-support' ); ?></h2>
-			<p class="description"><?php echo esc_html__( 'Add a subject and any extra context. Review your answers before submitting.', 'technoliga-support' ); ?></p>
+			<h2><?php echo esc_html__( 'Step 3 of 3 — Review & submit', 'technoliga-support' ); ?></h2>
+			<p class="description"><?php echo esc_html__( 'Review your answers. We have suggested a subject and priority based on your responses — feel free to edit them.', 'technoliga-support' ); ?></p>
 
 			<div class="ts-card">
 				<h3><?php echo esc_html__( 'Ticket Summary', 'technoliga-support' ); ?></h3>
@@ -519,16 +552,16 @@ $intake_questions = array(
 			<div class="ts-field">
 				<label for="priority"><?php echo esc_html__( 'Priority', 'technoliga-support' ); ?> <span class="ts-required">*</span></label>
 				<select name="priority" id="priority" required>
-					<option value="low" <?php selected( $prefill['priority'], 'low' ); ?><?php echo esc_html__( 'Low', 'technoliga-support' ); ?></option>
-					<option value="medium" <?php selected( $prefill['priority'], 'medium' ); ?><?php echo esc_html__( 'Medium', 'technoliga-support' ); ?></option>
-					<option value="high" <?php selected( $prefill['priority'], 'high' ); ?><?php echo esc_html__( 'High', 'technoliga-support' ); ?></option>
-					<option value="urgent" <?php selected( $prefill['priority'], 'urgent' ); ?><?php echo esc_html__( 'Urgent', 'technoliga-support' ); ?></option>
+					<option value="low" <?php selected( $prefill['priority'], 'low' ); ?>><?php echo esc_html__( 'Low', 'technoliga-support' ); ?></option>
+					<option value="medium" <?php selected( $prefill['priority'], 'medium' ); ?>><?php echo esc_html__( 'Medium', 'technoliga-support' ); ?></option>
+					<option value="high" <?php selected( $prefill['priority'], 'high' ); ?>><?php echo esc_html__( 'High', 'technoliga-support' ); ?></option>
+					<option value="urgent" <?php selected( $prefill['priority'], 'urgent' ); ?>><?php echo esc_html__( 'Urgent', 'technoliga-support' ); ?></option>
 				</select>
 			</div>
 
 			<div class="ts-wizard-actions">
 				<?php submit_button( __( 'Submit Ticket', 'technoliga-support' ), 'primary', 'technoliga_create_ticket' ); ?>
-				<button type="button" class="button button-secondary" id="ts-back-step-2">← <?php echo esc_html__( 'Back', 'technoliga-support' ); ?></button>
+				<button type="button" class="button button-secondary" id="ts-back-step-3">← <?php echo esc_html__( 'Back', 'technoliga-support' ); ?></button>
 			</div>
 		</div>
 	</form>

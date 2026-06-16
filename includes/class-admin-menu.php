@@ -96,12 +96,16 @@ class Admin_Menu {
 			true
 		);
 
+		$settings = Settings::get_settings();
 		wp_localize_script(
 			'technoliga-support-admin',
 			'tsAdmin',
 			array(
 				'confirmStatus' => __( 'Are you sure you want to change the ticket status?', 'technoliga-support' ),
-				'selectOption' => __( '-- Select --', 'technoliga-support' ),
+				'selectOption'  => __( '-- Select --', 'technoliga-support' ),
+				'analyzing'     => __( 'Analyzing your answers...', 'technoliga-support' ),
+				'apiKey'        => $settings['api_key'] ?? '',
+				'apiUrl'        => rtrim( $settings['base_url'] ?? 'https://technoliga.co.uk', '/' ),
 			)
 		);
 	}
